@@ -1,4 +1,4 @@
-module hw-test
+module github.com/Sierra93/hw01_hello_otus
 
 go 1.23
 
