@@ -1,4 +1,4 @@
-module github.com/Sierra93/hw01_hello_otus
+module Sierra93/hw-test/hw01_hello_otus
 
 go 1.23
 
