@@ -47,7 +47,7 @@ func Top10(text string) []string {
 	}
 
 	// Создаем слайс для сортировки.
-	var wcSlice []WordCount
+	wcSlice := make([]WordCount, 0, len(freqMap))
 
 	// Заполняем слайс словом и его кол-вом повторений.
 	for w, c := range freqMap {
