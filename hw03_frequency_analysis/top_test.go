@@ -80,3 +80,35 @@ func TestTop10(t *testing.T) {
 		}
 	})
 }
+
+/*
+TestWordsFrequency тестирует одинаковую частоту слов.
+*/
+func TestWordsFrequency(t *testing.T) {
+	expected := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+		"f",
+		"g",
+		"h",
+		"i",
+		"j",
+	}
+	require.Equal(t, expected, Top10("a b c d e f g h i j k l m n o p q r s t u v w x y z"))
+}
+
+/*
+TestRepetitiveWordsDifferentRegistersSigns Тестирует слова слова с разными регистрами и знаками.
+*/
+func TestRepetitiveWordsDifferentRegistersSigns(t *testing.T) {
+	expected := []string{
+		"HELLO?",
+		"Hello!",
+		"hello,",
+		"hello.",
+	}
+	require.Equal(t, expected, Top10("Hello! hello. HELLO? hello,"))
+}
