@@ -1,4 +1,4 @@
-module github.com/Sierra93/hw03frequencyanalysis
+module github.com/Sierra93/hw-test/hw03_frequency_analysis
 
 go 1.23
 
