@@ -58,27 +58,11 @@ func Run(tasks []Task, n, m int) error {
 					return
 				}
 
-				currentTaskNumber := int(atomic.AddInt64(&totalTasks, 1))
+				currentTaskNumber := atomic.AddInt64(&totalTasks, 1)
 				err := task()
 
 				if err != nil {
-					newErrors := atomic.AddInt64(&errorsCount, 1)
-
-					// Ошибка в первых M задачах.
-					if currentTaskNumber <= m {
-						newErrorsInFirstM := atomic.AddInt64(&errorsInFirstM, 1)
-
-						if newErrorsInFirstM >= int64(m) && newErrors >= int64(m) {
-							// Достигли лимита ошибок в первых M задачах и всего ошибок.
-							closeOnce.Do(func() { close(doneChan) })
-							atomic.StoreInt64(&stop, 1)
-							return
-						}
-					} else if errorsCount >= int64(m) && m > 0 {
-						closeOnce.Do(func() { close(doneChan) })
-						atomic.StoreInt64(&stop, 1)
-						return
-					}
+					handleError(currentTaskNumber, m, &errorsInFirstM, &errorsCount, &stop, &closeOnce, doneChan)
 				}
 
 			case <-doneChan:
@@ -105,4 +89,29 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	return nil
+}
+
+// handleError - Обрабатывает ошибку внутри воркера.
+func handleError(
+	currentTaskNumber int64,
+	m int,
+	errorsInFirstM *int64,
+	errorsCount *int64,
+	stop *int64,
+	closeOnce *sync.Once,
+	doneChan chan struct{},
+) {
+	newErrors := atomic.AddInt64(errorsCount, 1)
+
+	if currentTaskNumber <= int64(m) {
+		newErrorsInFirstM := atomic.AddInt64(errorsInFirstM, 1)
+		if newErrorsInFirstM >= int64(m) && newErrors >= int64(m) {
+			closeOnce.Do(func() { close(doneChan) })
+			atomic.StoreInt64(stop, 1)
+			return
+		}
+	} else if newErrors >= int64(m) && m > 0 {
+		closeOnce.Do(func() { close(doneChan) })
+		atomic.StoreInt64(stop, 1)
+	}
 }
