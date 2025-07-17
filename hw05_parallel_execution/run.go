@@ -25,29 +25,21 @@ func Run(tasks []Task, n, m int) error {
 		stop           int64 // Флаг остановки.
 	)
 
-	// Канал для задач.
 	taskChan := make(chan Task, len(tasks))
-
-	// Канал завершения, ничем не заполняем.
 	doneChan := make(chan struct{})
-
 	var closeOnce sync.Once
 
-	// Заполняем канал задачами.
 	for _, task := range tasks {
 		taskChan <- task
 	}
-
 	close(taskChan)
 
 	var wg sync.WaitGroup
 
-	// Воркер выполняет работу в горутинах.
 	runWorker := func() {
 		defer wg.Done()
 
 		for {
-			// Если достигли лимита ошибок в первых M задачах, то это повод остановиться.
 			if atomic.LoadInt64(&stop) == 1 {
 				return
 			}
@@ -76,18 +68,14 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	wg.Add(n)
-
 	for i := 0; i < n; i++ {
 		go runWorker()
 	}
-
 	wg.Wait()
 
-	// Если достигли максимально допустимого кол-ва ошибок в горутинах.
 	if atomic.LoadInt64(&errorsCount) >= int64(m) && m > 0 {
 		return ErrErrorsLimitExceeded
 	}
-
 	return nil
 }
 
