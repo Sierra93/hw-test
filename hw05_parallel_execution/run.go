@@ -19,10 +19,10 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	var (
-		errorsInFirstM int32 // Ошибки в первых M задачах.
-		totalTasks     int32 // Всего выполненных задач.
-		errorsCount    int32 // Всего ошибок.
-		stop           int32 // Флаг остановки.
+		errorsInFirstM int64 // Ошибки в первых M задачах.
+		totalTasks     int64 // Всего выполненных задач.
+		errorsCount    int64 // Всего ошибок.
+		stop           int64 // Флаг остановки.
 	)
 
 	// Канал для задач.
@@ -48,7 +48,7 @@ func Run(tasks []Task, n, m int) error {
 
 		for {
 			// Если достигли лимита ошибок в первых M задачах, то это повод остановиться.
-			if atomic.LoadInt32(&stop) == 1 {
+			if atomic.LoadInt64(&stop) == 1 {
 				return
 			}
 
@@ -58,25 +58,25 @@ func Run(tasks []Task, n, m int) error {
 					return
 				}
 
-				currentTaskNumber := int(atomic.AddInt32(&totalTasks, 1))
+				currentTaskNumber := int(atomic.AddInt64(&totalTasks, 1))
 				err := task()
 
 				if err != nil {
-					newErrors := atomic.AddInt32(&errorsCount, 1)
+					newErrors := atomic.AddInt64(&errorsCount, 1)
 
 					// Ошибка в первых M задачах.
 					if currentTaskNumber <= m {
-						newErrorsInFirstM := atomic.AddInt32(&errorsInFirstM, 1)
+						newErrorsInFirstM := atomic.AddInt64(&errorsInFirstM, 1)
 
-						if newErrorsInFirstM >= int32(m) && newErrors >= int32(m) {
+						if newErrorsInFirstM >= int64(m) && newErrors >= int64(m) {
 							// Достигли лимита ошибок в первых M задачах и всего ошибок.
 							closeOnce.Do(func() { close(doneChan) })
-							atomic.StoreInt32(&stop, 1)
+							atomic.StoreInt64(&stop, 1)
 							return
 						}
-					} else if errorsCount >= int32(m) && m > 0 {
+					} else if errorsCount >= int64(m) && m > 0 {
 						closeOnce.Do(func() { close(doneChan) })
-						atomic.StoreInt32(&stop, 1)
+						atomic.StoreInt64(&stop, 1)
 						return
 					}
 				}
@@ -85,7 +85,7 @@ func Run(tasks []Task, n, m int) error {
 				return
 			}
 
-			if atomic.LoadInt32(&stop) == 1 {
+			if atomic.LoadInt64(&stop) == 1 {
 				return
 			}
 		}
@@ -100,7 +100,7 @@ func Run(tasks []Task, n, m int) error {
 	wg.Wait()
 
 	// Если достигли максимально допустимого кол-ва ошибок в горутинах.
-	if atomic.LoadInt32(&errorsCount) >= int32(m) && m > 0 {
+	if atomic.LoadInt64(&errorsCount) >= int64(m) && m > 0 {
 		return ErrErrorsLimitExceeded
 	}
 
