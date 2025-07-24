@@ -52,7 +52,6 @@ func Run(tasks []Task, n, m int) error {
 
 				currentTaskNumber := atomic.AddInt64(&totalTasks, 1)
 				err := task()
-
 				if err != nil {
 					handleError(currentTaskNumber, m, &errorsInFirstM, &errorsCount, &stop, &closeOnce, doneChan)
 				}
