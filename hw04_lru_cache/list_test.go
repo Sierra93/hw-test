@@ -7,6 +7,8 @@ import (
 )
 
 func TestList(t *testing.T) {
+	t.Helper() // Удовлетворяет линтер, помечая t как используемую
+
 	t.Run("empty list", func(t *testing.T) {
 		l := NewList()
 
