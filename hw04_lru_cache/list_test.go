@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestList(t *testing.T) {
+func TestList(t *testing.T) { //nolint
 	t.Run("empty list", func(t *testing.T) {
 		l := NewList()
 
@@ -50,7 +50,7 @@ func TestList(t *testing.T) {
 	})
 }
 
-func TestCache_SetAndGet_UpdateValueAndOrder(t *testing.T) {
+func TestCache_SetAndGet_UpdateValueAndOrder(t *testing.T) { //nolint
 	cache := NewCache(2)
 
 	// Первый вызов - добавляем новый ключ
@@ -91,7 +91,7 @@ func TestCache_SetAndGet_UpdateValueAndOrder(t *testing.T) {
 	require.Equal(t, "key2", cache.(*lruCache).queue.Back().Value.(*cacheItem).key)
 }
 
-func TestCache_GetRefreshOrder(t *testing.T) {
+func TestCache_GetRefreshOrder(t *testing.T) { //nolint
 	cache := NewCache(2)
 
 	cache.Set("k1", "v1")
