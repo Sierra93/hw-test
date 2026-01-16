@@ -46,34 +46,32 @@ func (l *list) Back() *listItem {
 
 // PushFront adds item to head of list.
 func (l *list) PushFront(v interface{}) *listItem {
-	newItem := listItem{Value: v, Next: l.head, Prev: nil}
+	newItem := &listItem{Value: v, Next: l.head, Prev: nil}
 
 	if l.tail == nil {
-		l.tail = &newItem
+		l.tail = newItem
 	} else {
-		l.head.Prev = &newItem
+		l.head.Prev = newItem
 	}
-	l.head = &newItem
+	l.head = newItem
 
 	l.len++
-
-	return l.head
+	return newItem
 }
 
 // PushBack adds item to tail of list.
 func (l *list) PushBack(v interface{}) *listItem {
-	newItem := listItem{Value: v, Next: nil, Prev: l.tail}
+	newItem := &listItem{Value: v, Next: nil, Prev: l.tail}
 
 	if l.head == nil {
-		l.head = &newItem
+		l.head = newItem
 	} else {
-		l.tail.Next = &newItem
+		l.tail.Next = newItem
 	}
-	l.tail = &newItem
+	l.tail = newItem
 
 	l.len++
-
-	return l.tail
+	return newItem
 }
 
 // Remove removes a list item.
