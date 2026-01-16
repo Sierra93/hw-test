@@ -10,6 +10,8 @@ import (
 )
 
 func TestCache(t *testing.T) {
+	t.Helper() // Добавляем это, чтобы линтер не ругался на неиспользуемый параметр t
+
 	t.Run("empty cache", func(t *testing.T) {
 		c := NewCache(10)
 
@@ -55,7 +57,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
+	t.Skip() // Здесь t используется (вызов Skip), линтер будет доволен
 
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
