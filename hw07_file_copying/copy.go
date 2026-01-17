@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/cheggaaa/pb/v3"
+	"Sierra93/hw-test/hw01_hello_otus/hw07_file_copying/progress"
 )
 
 var (
@@ -26,7 +26,7 @@ func Copy(fromPath, toPath string, offset, limit int64, isQuiet bool) error {
 	if offset > infFromFile.Size() {
 		return fmt.Errorf("file to read from: %w", ErrOffsetExceedsFileSize)
 	}
-	if limit == 0 || limit+offset > infFromFile.Size() {
+	if limit <= 0 || limit+offset > infFromFile.Size() {
 		limit = infFromFile.Size() - offset
 	}
 
@@ -36,8 +36,7 @@ func Copy(fromPath, toPath string, offset, limit int64, isQuiet bool) error {
 	}
 	defer fromFile.Close()
 
-	_, err = fromFile.Seek(offset, io.SeekStart)
-	if err != nil {
+	if _, err = fromFile.Seek(offset, io.SeekStart); err != nil {
 		return fmt.Errorf("file to read from: %w", err)
 	}
 
@@ -48,16 +47,18 @@ func Copy(fromPath, toPath string, offset, limit int64, isQuiet bool) error {
 
 	var reader io.Reader = fromFile
 	if !isQuiet {
-		bar := pb.Full.Start64(limit)
-		reader = bar.NewProxyReader(fromFile)
-		defer bar.Finish()
+		var finish func()
+		reader, finish = progress.GetReader(fromFile, limit)
+		defer finish()
 	}
 
-	_, err = io.CopyN(toFile, reader, limit)
-
-	if closeErr := toFile.Close(); err == nil {
-		err = closeErr
+	if _, err = io.CopyN(toFile, reader, limit); err != nil {
+		return fmt.Errorf("copy: %w", err)
 	}
 
-	return err
+	if err := toFile.Close(); err != nil {
+		return fmt.Errorf("close: %w", err)
+	}
+
+	return nil
 }

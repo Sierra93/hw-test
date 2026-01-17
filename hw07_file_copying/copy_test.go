@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -14,7 +14,7 @@ func TestCopy(t *testing.T) {
 	outputFile := filepath.Join(tempDir, "output.txt")
 
 	content := []byte("Hello, world! This is a test file.")
-	if err := ioutil.WriteFile(inputFile, content, 0644); err != nil {
+	if err := os.WriteFile(inputFile, content, 0o644); err != nil {
 		t.Fatalf("Failed to create input file: %v", err)
 	}
 
@@ -23,7 +23,7 @@ func TestCopy(t *testing.T) {
 		t.Fatalf("Copy failed: %v", err)
 	}
 
-	result, err := ioutil.ReadFile(outputFile)
+	result, err := os.ReadFile(outputFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestCopy(t *testing.T) {
 		t.Fatalf("Copy with offset and limit failed: %v", err)
 	}
 
-	result, err = ioutil.ReadFile(outputFile)
+	result, err = os.ReadFile(outputFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestCopy(t *testing.T) {
 	if err := Copy(inputFile, outputFile, 0, 0, false); err != nil {
 		t.Fatalf("Copy with limit=0 failed: %v", err)
 	}
-	result, err = ioutil.ReadFile(outputFile)
+	result, err = os.ReadFile(outputFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
