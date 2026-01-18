@@ -92,14 +92,14 @@ func Validate(v interface{}) error {
 func validateMin(paramValue string, field reflect.StructField, value reflect.Value) error {
 	validationErrors := make(ValidationErrors, 0)
 
-	min, err := strconv.Atoi(paramValue)
+	minVal, err := strconv.Atoi(paramValue)
 	if err != nil {
 		return ErrInvalidInteger
 	}
 
 	switch field.Type.Kind() { //nolint: exhaustive
 	case reflect.Int:
-		if err := checkMin(int(value.Int()), min); err != nil {
+		if err := checkMin(int(value.Int()), minVal); err != nil {
 			validationErrors = append(validationErrors,
 				ValidationError{
 					Field: field.Name,
@@ -112,7 +112,7 @@ func validateMin(paramValue string, field reflect.StructField, value reflect.Val
 		switch fieldValues := value.Interface().(type) {
 		case []int:
 			for _, fv := range fieldValues {
-				if err := checkMin(fv, min); err != nil {
+				if err := checkMin(fv, minVal); err != nil {
 					validationErrors = append(validationErrors,
 						ValidationError{
 							Field: field.Name,
@@ -131,8 +131,8 @@ func validateMin(paramValue string, field reflect.StructField, value reflect.Val
 	return validationErrors
 }
 
-func checkMin(fieldValue, min int) error {
-	if fieldValue < min {
+func checkMin(fieldValue, minVal int) error {
+	if fieldValue < minVal {
 		return ErrValidationMin
 	}
 	return nil
@@ -141,14 +141,14 @@ func checkMin(fieldValue, min int) error {
 func validateMax(paramValue string, field reflect.StructField, value reflect.Value) error {
 	validationErrors := make(ValidationErrors, 0)
 
-	max, err := strconv.Atoi(paramValue)
+	maxVal, err := strconv.Atoi(paramValue)
 	if err != nil {
 		return ErrInvalidInteger
 	}
 
 	switch field.Type.Kind() { //nolint: exhaustive
 	case reflect.Int:
-		if err := checkMax(int(value.Int()), max); err != nil {
+		if err := checkMax(int(value.Int()), maxVal); err != nil {
 			validationErrors = append(validationErrors,
 				ValidationError{
 					Field: field.Name,
@@ -161,7 +161,7 @@ func validateMax(paramValue string, field reflect.StructField, value reflect.Val
 		switch fieldValues := value.Interface().(type) {
 		case []int:
 			for _, fv := range fieldValues {
-				if err := checkMax(fv, max); err != nil {
+				if err := checkMax(fv, maxVal); err != nil {
 					validationErrors = append(validationErrors,
 						ValidationError{
 							Field: field.Name,
@@ -180,8 +180,8 @@ func validateMax(paramValue string, field reflect.StructField, value reflect.Val
 	return validationErrors
 }
 
-func checkMax(fieldValue, max int) error {
-	if fieldValue > max {
+func checkMax(fieldValue, maxVal int) error {
+	if fieldValue > maxVal {
 		return ErrValidationMax
 	}
 	return nil
