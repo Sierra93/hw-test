@@ -1,6 +1,7 @@
 package hw10programoptimization
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,21 +30,23 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 
 type users [100_000]User
 
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
+func getUsers(r io.Reader) (users, error) {
+	var result users
+	scanner := bufio.NewScanner(r)
+	i := 0
+	for scanner.Scan() {
+		line := scanner.Bytes() // Получаем []byte без копирования
 		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
+		if err := json.Unmarshal(line, &user); err != nil {
+			return result, err
+		}
+		if i >= len(result) {
+			break
 		}
 		result[i] = user
+		i++
 	}
-	return
+	return result, nil
 }
 
 func countDomains(u users, domain string) (DomainStat, error) {
@@ -51,16 +54,15 @@ func countDomains(u users, domain string) (DomainStat, error) {
 	domainLower := strings.ToLower(domain)
 
 	for _, user := range u {
-		emailLower := strings.ToLower(user.Email)
+		email := user.Email
+		emailLower := strings.ToLower(email)
 		atIdx := strings.LastIndex(emailLower, "@")
 		if atIdx == -1 {
 			continue
 		}
 		domainPart := emailLower[atIdx+1:]
-		if strings.HasSuffix(domainPart, domainLower) {
-			if len(domainPart) == len(domainLower) || domainPart[len(domainPart)-len(domainLower)-1] == '.' {
-				result[domainPart]++
-			}
+		if domainPart == domainLower || strings.HasSuffix(domainPart, "."+domainLower) {
+			result[domainPart]++
 		}
 	}
 	return result, nil
