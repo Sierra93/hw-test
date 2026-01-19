@@ -50,16 +50,18 @@ func getUsers(r io.Reader) (result users, err error) {
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
 
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
-		}
+	// Компиляция регулярного выражения один раз
+	re, err := regexp.Compile(`\.` + regexp.QuoteMeta(domain))
+	if err != nil {
+		return nil, err
+	}
 
+	for _, user := range u {
+		// Используем уже скомпилированное выражение
+		matched := re.MatchString(user.Email)
 		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+			domainPart := strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])
+			result[domainPart]++
 		}
 	}
 	return result, nil
