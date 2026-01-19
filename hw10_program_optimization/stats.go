@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 )
 
@@ -49,19 +48,19 @@ func getUsers(r io.Reader) (result users, err error) {
 
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
-
-	// Компиляция регулярного выражения один раз
-	re, err := regexp.Compile(`\.` + regexp.QuoteMeta(domain))
-	if err != nil {
-		return nil, err
-	}
+	domainLower := strings.ToLower(domain)
 
 	for _, user := range u {
-		// Используем уже скомпилированное выражение
-		matched := re.MatchString(user.Email)
-		if matched {
-			domainPart := strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])
-			result[domainPart]++
+		emailLower := strings.ToLower(user.Email)
+		atIdx := strings.LastIndex(emailLower, "@")
+		if atIdx == -1 {
+			continue
+		}
+		domainPart := emailLower[atIdx+1:]
+		if strings.HasSuffix(domainPart, domainLower) {
+			if len(domainPart) == len(domainLower) || domainPart[len(domainPart)-len(domainLower)-1] == '.' {
+				result[domainPart]++
+			}
 		}
 	}
 	return result, nil
