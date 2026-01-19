@@ -2,8 +2,8 @@ package hw10programoptimization
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 )
@@ -21,11 +21,45 @@ type User struct {
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, err := getUsers(r)
-	if err != nil {
-		return nil, fmt.Errorf("get users error: %w", err)
+	result := make(DomainStat)
+	scanner := bufio.NewScanner(r)
+	domainLower := strings.ToLower(domain)
+	domainBytes := []byte(domainLower)
+	dotDomainBytes := []byte("." + domainLower)
+	emailKey := []byte(`"Email":"`)
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		idx := bytes.Index(line, emailKey)
+		if idx == -1 {
+			continue
+		}
+
+		start := idx + len(emailKey)
+		end := bytes.IndexByte(line[start:], '"')
+		if end == -1 {
+			continue
+		}
+
+		email := line[start : start+end]
+		atIdx := bytes.LastIndexByte(email, '@')
+		if atIdx == -1 {
+			continue
+		}
+
+		domainPart := email[atIdx+1:]
+		domainPartLower := bytes.ToLower(domainPart)
+
+		if bytes.Equal(domainPartLower, domainBytes) || bytes.HasSuffix(domainPartLower, dotDomainBytes) {
+			result[string(domainPartLower)]++
+		}
 	}
-	return countDomains(u, domain)
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 type users [100_000]User
