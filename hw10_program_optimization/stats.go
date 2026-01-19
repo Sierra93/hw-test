@@ -3,7 +3,6 @@ package hw10programoptimization
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"io"
 	"strings"
 )
@@ -59,45 +58,5 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		return nil, err
 	}
 
-	return result, nil
-}
-
-type users [100_000]User
-
-func getUsers(r io.Reader) (users, error) {
-	var result users
-	scanner := bufio.NewScanner(r)
-	i := 0
-	for scanner.Scan() {
-		line := scanner.Bytes() // Получаем []byte без копирования
-		var user User
-		if err := json.Unmarshal(line, &user); err != nil {
-			return result, err
-		}
-		if i >= len(result) {
-			break
-		}
-		result[i] = user
-		i++
-	}
-	return result, nil
-}
-
-func countDomains(u users, domain string) (DomainStat, error) {
-	result := make(DomainStat)
-	domainLower := strings.ToLower(domain)
-
-	for _, user := range u {
-		email := user.Email
-		emailLower := strings.ToLower(email)
-		atIdx := strings.LastIndex(emailLower, "@")
-		if atIdx == -1 {
-			continue
-		}
-		domainPart := emailLower[atIdx+1:]
-		if domainPart == domainLower || strings.HasSuffix(domainPart, "."+domainLower) {
-			result[domainPart]++
-		}
-	}
 	return result, nil
 }
