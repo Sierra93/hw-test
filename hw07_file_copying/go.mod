@@ -1,4 +1,4 @@
-module Sierra93/hw-test/hw01_hello_otus/hw07_file_copying
+module Sierra93/hw-test/hw07_file_copying
 
 
 go 1.23
