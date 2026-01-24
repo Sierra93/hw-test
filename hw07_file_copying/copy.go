@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
-	"Sierra93/hw-test/hw07_file_copying/progress"
+	"github.com/schollz/progressbar/v3"
 )
 
 var (
@@ -14,50 +15,65 @@ var (
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
-func Copy(fromPath, toPath string, offset, limit int64, isQuiet bool) error {
-	infFromFile, err := os.Stat(fromPath)
+func Copy(fromPath, toPath string, offset, limit int64) error {
+	if fromPath == "" || toPath == "" {
+		return ErrUnsupportedFile
+	}
+
+	fromPathAbs, err := filepath.Abs(fromPath)
 	if err != nil {
-		return fmt.Errorf("file to read from: %w", err)
-	}
-	if !infFromFile.Mode().IsRegular() {
-		return fmt.Errorf("file to read from: %w", ErrUnsupportedFile)
+		return err
 	}
 
-	if offset > infFromFile.Size() {
-		return fmt.Errorf("file to read from: %w", ErrOffsetExceedsFileSize)
-	}
-	if limit <= 0 || limit+offset > infFromFile.Size() {
-		limit = infFromFile.Size() - offset
-	}
-
-	fromFile, err := os.Open(fromPath)
+	toPathAbs, err := filepath.Abs(toPath)
 	if err != nil {
-		return fmt.Errorf("file to read from: %w", err)
-	}
-	defer fromFile.Close()
-
-	if _, err = fromFile.Seek(offset, io.SeekStart); err != nil {
-		return fmt.Errorf("file to read from: %w", err)
+		return err
 	}
 
-	toFile, err := os.OpenFile(toPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, infFromFile.Mode())
+	if fromPathAbs == toPathAbs {
+		return ErrUnsupportedFile
+	}
+
+	sourceFileStat, err := os.Stat(fromPath)
 	if err != nil {
-		return fmt.Errorf("file to write to: %w", err)
+		return ErrUnsupportedFile
 	}
 
-	var reader io.Reader = fromFile
-	if !isQuiet {
-		var finish func()
-		reader, finish = progress.GetReader(fromFile, limit)
-		defer finish()
+	if !sourceFileStat.Mode().IsRegular() {
+		return ErrUnsupportedFile
 	}
 
-	if _, err = io.CopyN(toFile, reader, limit); err != nil {
-		return fmt.Errorf("copy: %w", err)
+	sourceFileSize := sourceFileStat.Size()
+	if sourceFileSize < offset {
+		return ErrOffsetExceedsFileSize
 	}
 
-	if err := toFile.Close(); err != nil {
-		return fmt.Errorf("close: %w", err)
+	if limit == 0 || limit > sourceFileSize-offset {
+		limit = sourceFileSize - offset
+	}
+
+	source, err := os.Open(fromPath)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer source.Close()
+
+	destination, err := os.Create(toPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer destination.Close()
+
+	_, err = source.Seek(offset, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("failed to read source file: %w", err)
+	}
+
+	bar := progressbar.DefaultBytes(limit)
+
+	_, err = io.CopyN(io.MultiWriter(destination, bar), source, limit)
+	if err != nil && errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to copy data from source file to destination file: %w", err)
 	}
 
 	return nil

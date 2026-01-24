@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"log"
+	"fmt"
+	"os"
 )
 
 var (
 	from, to      string
 	limit, offset int64
-	isQuiet       bool
 )
 
 func init() {
@@ -16,20 +16,18 @@ func init() {
 	flag.StringVar(&to, "to", "", "file to write to")
 	flag.Int64Var(&limit, "limit", 0, "limit of bytes to copy")
 	flag.Int64Var(&offset, "offset", 0, "offset in input file")
-	flag.BoolVar(&isQuiet, "quiet", false, "run without output")
 }
 
 func main() {
 	flag.Parse()
-
-	if from == "" {
-		log.Fatalf("go-cp: file to read from is empty")
-	}
-	if to == "" {
-		log.Fatalf("go-cp: file to write to is empty")
+	if from == "" || to == "" {
+		flag.Usage()
+		return
 	}
 
-	if err := Copy(from, to, offset, limit, isQuiet); err != nil {
-		log.Fatalf("go-cp: %v", err)
+	err := Copy(from, to, offset, limit)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
