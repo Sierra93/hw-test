@@ -69,7 +69,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	const bufferSize = 32 * 1024 // 32 KB буфер
 	buf := make([]byte, bufferSize)
-	var copied int64 = 0
+	var copied int64
 	for copied < limit {
 		bytesLeft := limit - copied
 		readSize := bufferSize
