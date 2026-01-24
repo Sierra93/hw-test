@@ -19,7 +19,7 @@ func TestCopy(t *testing.T) {
 	}
 
 	// Тест успешного копирования
-	if err := Copy(inputFile, outputFile, 0, int64(len(content)), false); err != nil {
+	if err := Copy(inputFile, outputFile, 0, int64(len(content))); err != nil {
 		t.Fatalf("Copy failed: %v", err)
 	}
 
@@ -35,7 +35,7 @@ func TestCopy(t *testing.T) {
 	// Тест с offset и limit
 	offset := int64(7)
 	limit := int64(5) // "world"
-	if err := Copy(inputFile, outputFile, offset, limit, false); err != nil {
+	if err := Copy(inputFile, outputFile, offset, limit); err != nil {
 		t.Fatalf("Copy with offset and limit failed: %v", err)
 	}
 
@@ -50,12 +50,12 @@ func TestCopy(t *testing.T) {
 	}
 
 	// Тест с offset больше размера файла
-	if err := Copy(inputFile, outputFile, int64(len(content)+10), 10, false); err == nil {
+	if err := Copy(inputFile, outputFile, int64(len(content)+10), 10); err == nil {
 		t.Error("Expected error for offset exceeding file size, got nil")
 	}
 
 	// Тест без ограничения (limit=0)
-	if err := Copy(inputFile, outputFile, 0, 0, false); err != nil {
+	if err := Copy(inputFile, outputFile, 0, 0); err != nil {
 		t.Fatalf("Copy with limit=0 failed: %v", err)
 	}
 	result, err = os.ReadFile(outputFile)
