@@ -2,35 +2,52 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
-func RunCmd(cmdArgs []string, env Environment) (returnCode int, err error) {
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-
-	envStr := make([]string, 0, len(env))
-	for key, val := range env {
-		envStr = append(envStr, fmt.Sprintf("%s=%s", key, val))
+func RunCmd(cmd []string, env Environment) (returnCode int) {
+	if len(cmd) == 0 {
+		return 0
 	}
 
-	cmd.Env = append(os.Environ(), envStr...)
-
-	if err := cmd.Run(); err != nil {
-		var exitError *exec.ExitError
-
-		if errors.As(err, &exitError) {
-			return exitError.ExitCode(), err
+	for name, val := range env {
+		if _, ok := os.LookupEnv(name); !ok {
+			if err := os.Setenv(name, val.Value); err != nil {
+				return 1
+			}
 		}
 
-		return 0, err
+		if err := os.Unsetenv(name); err != nil {
+			return 1
+		}
+
+		if !val.NeedRemove {
+			if err := os.Setenv(name, val.Value); err != nil {
+				return 1
+			}
+		}
 	}
 
-	return 0, nil
+	var args []string
+	if len(cmd) > 1 {
+		args = cmd[1:]
+	}
+
+	command := exec.Command(cmd[0], args...) //nolint:gosec
+	command.Stdout = os.Stdout
+	command.Stdin = os.Stdin
+	command.Stderr = os.Stderr
+
+	err := command.Run()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode()
+		}
+		return 1
+	}
+
+	return 0
 }

@@ -2,48 +2,80 @@ package main
 
 import (
 	"bufio"
-	"bytes"
+	"errors"
 	"fmt"
-	"log"
+	"io"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
-type Environment map[string]string
+const unsupportedSymbol = "="
+
+var ErrUnsupportedFileName = errors.New("file name contains unsupported symbol '='")
+
+type Environment map[string]EnvValue
+
+// EnvValue helps to distinguish between empty files and files with the first empty line.
+type EnvValue struct {
+	Value      string
+	NeedRemove bool
+}
 
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
-	entries, err := os.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("ReadDir: %v", err)
+		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	envVar := make(Environment)
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			file, err := os.Open(filepath.Join(dir, entry.Name()))
-			if err != nil {
-				log.Printf("ReadDir: %v", err)
-				continue
-			}
-			defer file.Close()
+	env := make(Environment, len(files))
 
-			input := bufio.NewScanner(file)
-			if input.Scan() {
-				valEnv := strings.TrimRight(input.Text(), " \t")
-				envVar[entry.Name()] = string(bytes.ReplaceAll([]byte(valEnv), []byte("\x00"), []byte("\n")))
-			} else {
-				if err := input.Err(); err == nil {
-					envVar[entry.Name()] = ""
-				}
-			}
-			if err := input.Err(); err != nil {
-				log.Printf("ReadDir: %v", err)
-			}
+	for _, file := range files {
+		finfo, err := file.Info()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get file info: %w", err)
+		}
+
+		if finfo.IsDir() {
+			continue
+		}
+
+		if strings.Contains(finfo.Name(), unsupportedSymbol) {
+			return nil, fmt.Errorf("%q: %w", finfo.Name(), ErrUnsupportedFileName)
+		}
+
+		value, err := readValueFromFile(path.Join(dir, finfo.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read env value: %w", err)
+		}
+
+		env[file.Name()] = EnvValue{
+			Value:      value,
+			NeedRemove: finfo.Size() == 0,
 		}
 	}
 
-	return envVar, nil
+	return env, nil
+}
+
+func readValueFromFile(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to open env file: %w", err)
+	}
+	defer file.Close()
+
+	buf := bufio.NewReader(file)
+
+	line, err := buf.ReadBytes('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", fmt.Errorf("failed to read env file: %w", err)
+	}
+
+	value := strings.ReplaceAll(string(line), "\x00", "\n")
+	value = strings.TrimRight(value, " \t\n")
+
+	return value, nil
 }
