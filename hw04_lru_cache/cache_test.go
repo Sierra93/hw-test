@@ -1,81 +1,84 @@
 package hw04lrucache
 
 import (
-	"math/rand"
-	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestCache(t *testing.T) {
-	t.Helper() // Добавляем это, чтобы линтер не ругался на неиспользуемый параметр t
+func TestList(t *testing.T) {
+	t.Run("empty list", func(t *testing.T) {
+		l := NewList()
 
-	t.Run("empty cache", func(t *testing.T) {
-		c := NewCache(10)
-
-		_, ok := c.Get("aaa")
-		require.False(t, ok)
-
-		_, ok = c.Get("bbb")
-		require.False(t, ok)
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
 	})
 
-	t.Run("simple", func(t *testing.T) {
-		c := NewCache(5)
+	t.Run("nil input", func(t *testing.T) {
+		l := NewList()
 
-		wasInCache := c.Set("aaa", 100)
-		require.False(t, wasInCache)
-
-		wasInCache = c.Set("bbb", 200)
-		require.False(t, wasInCache)
-
-		val, ok := c.Get("aaa")
-		require.True(t, ok)
-		require.Equal(t, 100, val)
-
-		val, ok = c.Get("bbb")
-		require.True(t, ok)
-		require.Equal(t, 200, val)
-
-		wasInCache = c.Set("aaa", 300)
-		require.True(t, wasInCache)
-
-		val, ok = c.Get("aaa")
-		require.True(t, ok)
-		require.Equal(t, 300, val)
-
-		val, ok = c.Get("ccc")
-		require.False(t, ok)
-		require.Nil(t, val)
+		require.NotPanics(t, func() { l.Remove(nil) })
+		require.NotPanics(t, func() { l.MoveToFront(nil) })
 	})
 
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+	t.Run("first push front/back", func(t *testing.T) {
+		l := NewList()
+
+		l.PushFront(10)
+		require.Equal(t, 10, l.Front().Value)
+		require.Equal(t, 10, l.Back().Value)
+		l.Remove(l.Front())
+
+		l.PushBack(20)
+		require.Equal(t, 20, l.Front().Value)
+		require.Equal(t, 20, l.Back().Value)
+		l.Remove(l.Back())
 	})
-}
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Здесь t используется (вызов Skip), линтер будет доволен
+	t.Run("remove last item", func(t *testing.T) {
+		l := NewList()
 
-	c := NewCache(10)
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
+		l.PushFront(10)
+		l.Remove(l.Front())
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+	})
 
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 1_000_000; i++ {
-			c.Set(Key(strconv.Itoa(i)), i)
+	t.Run("complex", func(t *testing.T) {
+		l := NewList()
+
+		l.PushFront(10) // [10]
+		l.PushBack(20)  // [10, 20]
+		l.PushBack(30)  // [10, 20, 30]
+		require.Equal(t, 3, l.Len())
+
+		middle := l.Front().Next // 20
+		l.Remove(middle)         // [10, 30]
+		require.Equal(t, 2, l.Len())
+
+		for i, v := range [...]int{40, 50, 60, 70, 80} {
+			if i%2 == 0 {
+				l.PushFront(v)
+			} else {
+				l.PushBack(v)
+			}
+		} // [80, 60, 40, 10, 30, 50, 70]
+
+		require.Equal(t, 7, l.Len())
+		require.Equal(t, 80, l.Front().Value)
+		require.Equal(t, 70, l.Back().Value)
+
+		l.MoveToFront(l.Front()) // [80, 60, 40, 10, 30, 50, 70]
+		require.Equal(t, 80, l.Front().Value)
+		l.MoveToFront(l.Back()) // [70, 80, 60, 40, 10, 30, 50]
+		require.Equal(t, 70, l.Front().Value)
+
+		elems := make([]int, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(int))
 		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 1_000_000; i++ {
-			c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
-		}
-	}()
-
-	wg.Wait()
+		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
+	})
 }

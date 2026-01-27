@@ -2,112 +2,118 @@ package hw04lrucache
 
 type List interface {
 	Len() int
-	Front() *listItem
-	Back() *listItem
-	PushFront(v interface{}) *listItem
-	PushBack(v interface{}) *listItem
-	Remove(i *listItem)
-	MoveToFront(i *listItem)
+	Front() *ListItem
+	Back() *ListItem
+	PushFront(v interface{}) *ListItem
+	PushBack(v interface{}) *ListItem
+	Remove(i *ListItem)
+	MoveToFront(i *ListItem)
 }
 
-// listItem is a list item.
-type listItem struct {
-	Value interface{} // value of list item.
-	Next  *listItem   // next item in list.
-	Prev  *listItem   // previous item in list.
+type ListItem struct {
+	Value interface{}
+	Key   Key
+	Next  *ListItem
+	Prev  *ListItem
 }
 
-// list is list :).
 type list struct {
-	len  int
-	head *listItem
-	tail *listItem
+	len   int
+	front *ListItem
+	back  *ListItem
 }
 
-// NewList creates an empty list.
-func NewList() List { //nolint:ireturn
-	return &list{len: 0, head: nil, tail: nil}
+func NewList() List {
+	return new(list)
 }
 
-// Len returns length of list.
 func (l *list) Len() int {
 	return l.len
 }
 
-// Front returns first item in list.
-func (l *list) Front() *listItem {
-	return l.head
+func (l *list) Front() *ListItem {
+	return l.front
 }
 
-// Back returns last item in list.
-func (l *list) Back() *listItem {
-	return l.tail
+func (l *list) Back() *ListItem {
+	return l.back
 }
 
-// PushFront adds item to head of list.
-func (l *list) PushFront(v interface{}) *listItem {
-	newItem := &listItem{Value: v, Next: l.head, Prev: nil}
-
-	if l.tail == nil {
-		l.tail = newItem
-	} else {
-		l.head.Prev = newItem
+func (l *list) PushFront(v interface{}) *ListItem {
+	newFrontItem := &ListItem{
+		Value: v,
+		Next:  l.front,
+		Prev:  nil,
 	}
-	l.head = newItem
 
-	l.len++
-	return newItem
-}
-
-// PushBack adds item to tail of list.
-func (l *list) PushBack(v interface{}) *listItem {
-	newItem := &listItem{Value: v, Next: nil, Prev: l.tail}
-
-	if l.head == nil {
-		l.head = newItem
+	if l.len == 0 {
+		l.back = newFrontItem
 	} else {
-		l.tail.Next = newItem
+		l.front.Prev = newFrontItem
 	}
-	l.tail = newItem
 
+	l.front = newFrontItem
 	l.len++
-	return newItem
+	return newFrontItem
 }
 
-// Remove removes a list item.
-func (l *list) Remove(i *listItem) {
-	if l.head == i {
-		l.head = i.Next
+func (l *list) PushBack(v interface{}) *ListItem {
+	newBackItem := &ListItem{
+		Value: v,
+		Next:  nil,
+		Prev:  l.back,
+	}
+
+	if l.len == 0 {
+		l.front = newBackItem
 	} else {
+		l.back.Next = newBackItem
+	}
+
+	l.back = newBackItem
+	l.len++
+	return newBackItem
+}
+
+func (l *list) MoveToFront(i *ListItem) {
+	switch {
+	case l.len == 0, i == nil, i == l.front:
+		return
+	case i == l.back:
+		l.back = l.back.Prev
+		i.Prev.Next = nil
+	default:
 		i.Prev.Next = i.Next
+		i.Next.Prev = i.Prev
 	}
 
-	if l.tail == i {
-		l.tail = i.Prev
-	} else {
+	i.Next = l.front
+	i.Prev = nil
+	l.front.Prev = i
+	l.front = i
+}
+
+func (l *list) Remove(i *ListItem) {
+	switch {
+	case l.len == 0, i == nil:
+		return
+	case l.len == 1:
+		l.front = nil
+		l.back = nil
+	case i == l.front:
+		l.front = l.front.Next
+		i.Next.Prev = nil
+		i.Next = nil
+	case i == l.back:
+		l.back = l.back.Prev
+		i.Prev.Next = nil
+		i.Prev = nil
+	default:
+		i.Prev.Next = i.Next
 		i.Next.Prev = i.Prev
+		i.Next = nil
+		i.Prev = nil
 	}
 
 	l.len--
-}
-
-// MoveToFront moves item to front of list.
-func (l *list) MoveToFront(i *listItem) {
-	if l.head == i {
-		return
-	}
-
-	if l.tail == i {
-		l.tail = i.Prev
-	} else {
-		i.Next.Prev = i.Prev
-	}
-	i.Prev.Next = i.Next
-
-	i.Prev = nil
-	i.Next = l.head
-
-	l.head.Prev = i
-
-	l.head = i
 }
