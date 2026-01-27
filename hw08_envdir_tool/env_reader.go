@@ -69,12 +69,12 @@ func readValueFromFile(path string) (string, error) {
 
 	buf := bufio.NewReader(file)
 
-	line, err := buf.ReadBytes('\n')
+	contentBytes, err := io.ReadAll(buf)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("failed to read env file: %w", err)
 	}
 
-	value := strings.ReplaceAll(string(line), "\x00", "\n")
+	value := strings.ReplaceAll(string(contentBytes), "\x00", "\n")
 	value = strings.TrimRight(value, " \t\n")
 
 	return value, nil
