@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -60,24 +59,15 @@ func ReadDir(dir string) (Environment, error) {
 }
 
 func readValueFromFile(path string) (string, error) {
-	file, err := os.Open(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to open env file: %w", err)
-	}
-	defer file.Close()
-
-	// Используем Scanner для чтения построчно
-	scanner := bufio.NewScanner(file)
-	value := ""
-
-	if scanner.Scan() {
-		value = scanner.Text()
+		return "", err
 	}
 
-	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("failed to read env file: %w", err)
-	}
-	value = strings.TrimSpace(value)
+	s := strings.ReplaceAll(string(content), "\x00", "\n")
+	lines := strings.Split(s, "\n")
+	value := lines[0]
+	value = strings.TrimRight(value, " \t")
 
 	return value, nil
 }

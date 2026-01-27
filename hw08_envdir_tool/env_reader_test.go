@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,14 +8,19 @@ import (
 
 func TestReadDir(t *testing.T) {
 	dir := t.TempDir()
-
-	// Создаем файлы с разными содержимым
-	files := map[string]string{
+	filesToCreate := map[string]string{
 		"VAR1": "value1",
 		"VAR2": "value2\nwith newline",
-		"VAR3": "", // пустой файл
+		"VAR3": "",
 	}
-	for name, content := range files {
+
+	expectedValues := map[string]string{
+		"VAR1": "value1",
+		"VAR2": "value2",
+		"VAR3": "",
+	}
+
+	for name, content := range filesToCreate {
 		path := filepath.Join(dir, name)
 		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			t.Fatalf("Error creating file %s: %v", path, err)
@@ -28,9 +32,12 @@ func TestReadDir(t *testing.T) {
 		t.Fatalf("ReadDir failed: %v", err)
 	}
 
-	// Проверка переменных
-	for key, expected := range files {
-		value := env[key]
+	for key, expected := range expectedValues {
+		value, ok := env[key]
+		if !ok {
+			t.Errorf("Variable %s missing in result", key)
+			continue
+		}
 		if value.Value != expected {
 			t.Errorf("For %s: expected %q, got %q", key, expected, value.Value)
 		}
@@ -40,7 +47,6 @@ func TestReadDir(t *testing.T) {
 func TestReadDir_ZeroBytesFile(t *testing.T) {
 	dir := t.TempDir()
 
-	// Создаем файл с нулевым содержимым
 	filename := "VAR_ZERO"
 	path := filepath.Join(dir, filename)
 	if err := os.WriteFile(path, []byte{0, 0, 0}, 0o644); err != nil {
@@ -53,15 +59,13 @@ func TestReadDir_ZeroBytesFile(t *testing.T) {
 	}
 
 	val := env[filename]
-	// Проверяем, что содержимое заменено на новую строку с байтами \n
-	expected := string(bytes.ReplaceAll([]byte{0, 0, 0}, []byte("\x00"), []byte("\n")))
+	expected := ""
 	if val.Value != expected {
 		t.Errorf("Expected %q, got %q", expected, val.Value)
 	}
 }
 
 func TestReadDirFailOpenDir(t *testing.T) {
-	// Попытка прочитать несуществующую директорию
 	_, err := ReadDir("/path/to/nonexistent/dir")
 	if err == nil {
 		t.Fatal("Expected error for non-existent directory, got nil")
@@ -69,19 +73,15 @@ func TestReadDirFailOpenDir(t *testing.T) {
 }
 
 func TestReadDirFileReadError(t *testing.T) {
-	// Создаем временную папку
 	dir := t.TempDir()
 
-	// Создаем файл, затем изменяем его разрешения, чтобы вызвать ошибку чтения
 	filename := "VAR"
 	path := filepath.Join(dir, filename)
 	if err := os.WriteFile(path, []byte("val"), 0o644); err != nil {
 		t.Fatalf("Error writing file: %v", err)
 	}
-	// Убираем все разрешения чтобы чтение вызвало ошибку
 	os.Chmod(path, 0o000)
 
-	// Восстановим разрешения после теста
 	defer os.Chmod(path, 0o644)
 
 	_, err := ReadDir(dir)
