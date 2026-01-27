@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"strings"
@@ -66,12 +66,18 @@ func readValueFromFile(path string) (string, error) {
 	}
 	defer file.Close()
 
-	contentBytes, err := io.ReadAll(file)
-	if err != nil {
-		return "", fmt.Errorf("failed to read env file: %w", err)
+	// Используем Scanner для чтения построчно
+	scanner := bufio.NewScanner(file)
+	value := ""
+
+	if scanner.Scan() {
+		value = scanner.Text()
 	}
 
-	value := strings.ReplaceAll(string(contentBytes), "\x00", "\n")
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("failed to read env file: %w", err)
+	}
+	value = strings.TrimSpace(value)
 
 	return value, nil
 }
