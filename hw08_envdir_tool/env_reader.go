@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -67,16 +66,12 @@ func readValueFromFile(path string) (string, error) {
 	}
 	defer file.Close()
 
-	buf := bufio.NewReader(file)
-
-	contentBytes, err := io.ReadAll(buf)
-	if err != nil && !errors.Is(err, io.EOF) {
+	contentBytes, err := io.ReadAll(file)
+	if err != nil {
 		return "", fmt.Errorf("failed to read env file: %w", err)
 	}
 
 	value := strings.ReplaceAll(string(contentBytes), "\x00", "\n")
-	value = strings.TrimSuffix(value, "\n")
-	value = strings.TrimRight(value, " \t")
 
 	return value, nil
 }
