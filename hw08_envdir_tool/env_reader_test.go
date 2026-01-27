@@ -32,7 +32,7 @@ func TestReadDir(t *testing.T) {
 	for key, expected := range files {
 		value := env[key]
 		if value.Value != expected {
-			t.Errorf("For %s: expected %q, got %q", key, expected, value)
+			t.Errorf("For %s: expected %q, got %q", key, expected, value.Value)
 		}
 	}
 }
@@ -56,7 +56,7 @@ func TestReadDir_ZeroBytesFile(t *testing.T) {
 	// Проверяем, что содержимое заменено на новую строку с байтами \n
 	expected := string(bytes.ReplaceAll([]byte{0, 0, 0}, []byte("\x00"), []byte("\n")))
 	if val.Value != expected {
-		t.Errorf("Expected %q, got %q", expected, val)
+		t.Errorf("Expected %q, got %q", expected, val.Value)
 	}
 }
 
