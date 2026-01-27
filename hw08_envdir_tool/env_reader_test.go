@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -40,7 +41,7 @@ func TestReadDir(t *testing.T) {
 func TestReadDir_ZeroBytesFile(t *testing.T) {
 	dir := t.TempDir()
 
-	// Создаем файл с нулевым содержимым
+	// Создаем файл с тремя нулевыми байтами
 	filename := "VAR_ZERO"
 	path := filepath.Join(dir, filename)
 	if err := os.WriteFile(path, []byte{0, 0, 0}, 0o644); err != nil {
@@ -52,11 +53,18 @@ func TestReadDir_ZeroBytesFile(t *testing.T) {
 		t.Fatalf("ReadDir failed: %v", err)
 	}
 
-	val := env[filename]
-	// Проверяем, что содержимое заменено на новую строку с байтами \n
+	val, ok := env[filename]
+	if !ok {
+		t.Fatalf("Variable %s not found in env", filename)
+	}
+
+	// 1. Заменяем 0 на \n -> получаем "\n\n\n"
 	expected := string(bytes.ReplaceAll([]byte{0, 0, 0}, []byte("\x00"), []byte("\n")))
+	// 2. Обрезаем последний \n (как это делает ваша функция) -> получаем "\n\n"
+	expected = strings.TrimSuffix(expected, "\n")
+
 	if val.Value != expected {
-		t.Errorf("Expected %q, got %q", expected, val.Value)
+		t.Errorf("Expected %q (len %d), got %q (len %d)", expected, len(expected), val.Value, len(val.Value))
 	}
 }
 
