@@ -75,7 +75,8 @@ func readValueFromFile(path string) (string, error) {
 	}
 
 	value := strings.ReplaceAll(string(contentBytes), "\x00", "\n")
-	value = strings.TrimRight(value, " \t\n")
+	value = strings.TrimSuffix(value, "\n")
+	value = strings.TrimRight(value, " \t")
 
 	return value, nil
 }
