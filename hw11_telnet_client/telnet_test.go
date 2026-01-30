@@ -8,10 +8,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTelnetClient(t *testing.T) {
+	t.Run("invalid address", func(t *testing.T) {
+		client := NewTelnetClient("invalidhost:4242", timeout, nil, nil)
+		assert.Error(t, client.Connect())
+	})
+
+	t.Run("closed connection", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		defer func() { require.NoError(t, l.Close()) }()
+
+		client := NewTelnetClient(l.Addr().String(), timeout, nil, nil)
+
+		assert.ErrorIs(t, client.Send(), ErrClosedConnection)
+		assert.ErrorIs(t, client.Receive(), ErrClosedConnection)
+		assert.ErrorIs(t, client.Close(), ErrClosedConnection)
+	})
+
 	t.Run("basic", func(t *testing.T) {
 		l, err := net.Listen("tcp", "127.0.0.1:")
 		require.NoError(t, err)
