@@ -1,6 +1,8 @@
 package main
 
 import (
+	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
+	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/logger"
 	"context"
 	"flag"
 	"fmt"
@@ -9,8 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
-	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "Sierra93/hw-test/hw12_13_14_15_calendar/internal/server/http"
 	storage "Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
