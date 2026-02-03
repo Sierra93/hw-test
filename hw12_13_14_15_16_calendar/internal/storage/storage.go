@@ -1,4 +1,4 @@
-package storage //nolint
+package storage
 
 import (
 	"fmt"
@@ -19,5 +19,3 @@ type EventStorage interface {
 	Delete(id string) error
 	Close() error
 }
-
-//nolint
