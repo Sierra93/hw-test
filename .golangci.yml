@@ -12,18 +12,23 @@ linters-settings:
     rules:
       Main:
         files:
-          - $all
+          - "$all"
           - "!$test"
         allow:
-          - $gostd
+          - "$gostd"
           - "Sierra93/hw-test/hw12_13_14_15_calendar"
       Test:
         files:
-          - $test
+          - "$test"
         allow:
-          - $gostd
+          - "$gostd"
           - github.com/stretchr/testify
           - "Sierra93/hw-test/hw12_13_14_15_calendar"
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(Sierra93/hw-test/hw12_13_14_15_calendar)
 issues:
   exclude-rules:
     - path: _test\.go
