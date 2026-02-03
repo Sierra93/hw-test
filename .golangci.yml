@@ -16,6 +16,7 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - "Sierra93/hw-test/hw12_13_14_15_calendar"
       Test:
         files:
           - $test
