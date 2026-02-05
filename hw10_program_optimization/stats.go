@@ -1,10 +1,9 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
-	"fmt"
+	"bufio"
+	"bytes"
 	"io"
-	"regexp"
 	"strings"
 )
 
@@ -21,46 +20,43 @@ type User struct {
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, err := getUsers(r)
-	if err != nil {
-		return nil, fmt.Errorf("get users error: %w", err)
-	}
-	return countDomains(u, domain)
-}
-
-type users [100_000]User
-
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
-		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
-		}
-		result[i] = user
-	}
-	return
-}
-
-func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
+	scanner := bufio.NewScanner(r)
+	domainLower := strings.ToLower(domain)
+	domainBytes := []byte(domainLower)
+	dotDomainBytes := []byte("." + domainLower)
+	emailKey := []byte(`"Email":"`)
 
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		idx := bytes.Index(line, emailKey)
+		if idx == -1 {
+			continue
 		}
 
-		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+		start := idx + len(emailKey)
+		end := bytes.IndexByte(line[start:], '"')
+		if end == -1 {
+			continue
+		}
+
+		email := line[start : start+end]
+		atIdx := bytes.LastIndexByte(email, '@')
+		if atIdx == -1 {
+			continue
+		}
+
+		domainPart := email[atIdx+1:]
+		domainPartLower := bytes.ToLower(domainPart)
+
+		if bytes.Equal(domainPartLower, domainBytes) || bytes.HasSuffix(domainPartLower, dotDomainBytes) {
+			result[string(domainPartLower)]++
 		}
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
