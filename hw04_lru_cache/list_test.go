@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestList(t *testing.T) {
+func TestLinkedList(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
 		l := NewList()
 
@@ -53,11 +53,11 @@ func TestList(t *testing.T) {
 	t.Run("remove front and back", func(t *testing.T) {
 		l := NewList()
 		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
-			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
-		} // [10, 20, 30, 40, 50, 60, 70, 80]
+			l.PushBack(v)
+		}
 
-		l.Remove(l.Front()) // [20, 30, 40, 50, 60, 70, 80]
-		l.Remove(l.Back())  // [20, 30, 40, 50, 60, 70]
+		l.Remove(l.Front())
+		l.Remove(l.Back())
 
 		elems := make([]int, 0, l.Len())
 		for i := l.Front(); i != nil; i = i.Next {
@@ -70,10 +70,11 @@ func TestList(t *testing.T) {
 	t.Run("move all elements from back to front", func(t *testing.T) {
 		l := NewList()
 		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
-			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+			l.PushBack(v)
 		}
 
-		for i := 0; i < l.Len(); i++ {
+		length := l.Len()
+		for i := 0; i < length; i++ {
 			l.MoveToFront(l.Back())
 		}
 
@@ -88,11 +89,14 @@ func TestList(t *testing.T) {
 	t.Run("remove all elements", func(t *testing.T) {
 		l := NewList()
 		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
-			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+			l.PushBack(v)
 		}
 
-		for i := l.Front(); i != nil; i = i.Next {
-			l.Remove(i)
+		curr := l.Front()
+		for curr != nil {
+			next := curr.Next
+			l.Remove(curr)
+			curr = next
 		}
 
 		require.Equal(t, 0, l.Len())
@@ -111,7 +115,7 @@ func BenchmarkListPushBackAndRemove(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				f := list.Front()
-				list.PushBack(f)
+				list.PushBack(f.Value)
 				list.Remove(f)
 			}
 		})
@@ -128,7 +132,7 @@ func BenchmarkListPushFrontAndRemove(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				f := list.Back()
-				list.PushFront(f)
+				list.PushFront(f.Value)
 				list.Remove(f)
 			}
 		})
