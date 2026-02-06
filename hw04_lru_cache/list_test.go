@@ -1,14 +1,13 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestList(t *testing.T) {
-	t.Helper() // Удовлетворяет линтер, помечая t как используемую
-
 	t.Run("empty list", func(t *testing.T) {
 		l := NewList()
 
@@ -50,62 +49,103 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("remove front and back", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		} // [10, 20, 30, 40, 50, 60, 70, 80]
+
+		l.Remove(l.Front()) // [20, 30, 40, 50, 60, 70, 80]
+		l.Remove(l.Back())  // [20, 30, 40, 50, 60, 70]
+
+		elems := make([]int, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(int))
+		}
+
+		require.Equal(t, []int{20, 30, 40, 50, 60, 70}, elems)
+	})
+
+	t.Run("move all elements from back to front", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		}
+
+		for i := 0; i < l.Len(); i++ {
+			l.MoveToFront(l.Back())
+		}
+
+		elems := make([]int, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(int))
+		}
+
+		require.Equal(t, []int{10, 20, 30, 40, 50, 60, 70, 80}, elems)
+	})
+
+	t.Run("remove all elements", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		}
+
+		for i := l.Front(); i != nil; i = i.Next {
+			l.Remove(i)
+		}
+
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+	})
 }
 
-func TestCache_SetAndGet_UpdateValueAndOrder(t *testing.T) {
-	cache := NewCache(2)
-
-	// Первый вызов - добавляем новый ключ
-	wasInCache := cache.Set("key1", "value1")
-	require.False(t, wasInCache, "Первое добавление должно возвращать false")
-
-	// Проверяем, что получаем правильное значение
-	val, ok := cache.Get("key1")
-	require.True(t, ok)
-	require.Equal(t, "value1", val)
-
-	// Обновляем значение того же ключа и проверяем, что оно обновилось
-	wasInCache = cache.Set("key1", "new_value1")
-	require.True(t, wasInCache, "Обновление существующего ключа должно возвращать true")
-	val, ok = cache.Get("key1")
-	require.True(t, ok)
-	require.Equal(t, "new_value1", val)
-
-	// Добавляем еще один ключ
-	wasInCache = cache.Set("key2", "value2")
-	require.False(t, wasInCache)
-
-	// Порядок должен быть: key2, key1
-	front := cache.(*lruCache).queue.Front()
-	require.NotNil(t, front)
-	require.Equal(t, "key2", front.Value.(*cacheItem).key)
-
-	// Теперь добавим третий ключ, чтобы проверить удаление старого
-	cache.Set("key3", "value3")
-	require.Equal(t, 2, cache.(*lruCache).queue.Len())
-
-	// Проверяем, что удален старый (key1)
-	_, exists := cache.(*lruCache).items["key1"]
-	require.False(t, exists)
-
-	// Проверяем, что order обновлен: key3 на front
-	require.Equal(t, "key3", cache.(*lruCache).queue.Front().Value.(*cacheItem).key)
-	require.Equal(t, "key2", cache.(*lruCache).queue.Back().Value.(*cacheItem).key)
+func BenchmarkListPushBackAndRemove(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				f := list.Front()
+				list.PushBack(f)
+				list.Remove(f)
+			}
+		})
+	}
 }
 
-func TestCache_GetRefreshOrder(t *testing.T) {
-	cache := NewCache(2)
+func BenchmarkListPushFrontAndRemove(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				f := list.Back()
+				list.PushFront(f)
+				list.Remove(f)
+			}
+		})
+	}
+}
 
-	cache.Set("k1", "v1")
-	cache.Set("k2", "v2")
-
-	// Делается Get для k1, чтобы обновить его позицию
-	val, ok := cache.Get("k1")
-	require.True(t, ok)
-	require.Equal(t, "v1", val)
-
-	// После этого позиция ключа "k1" должна быть в начале
-	require.Equal(t, "k1", cache.(*lruCache).queue.Front().Value.(*cacheItem).key)
-	// А ключ "k2" в конце
-	require.Equal(t, "k2", cache.(*lruCache).queue.Back().Value.(*cacheItem).key)
+func BenchmarkListMoveToFront(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				list.MoveToFront(list.Back())
+			}
+		})
+	}
 }
