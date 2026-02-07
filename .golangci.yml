@@ -16,12 +16,15 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - "github.com/Sierra93/hw-test/hw12_13_14_15_calendar"
       Test:
         files:
           - $test
         allow:
           - $gostd
           - github.com/stretchr/testify
+          - "github.com/Sierra93/hw-test/hw12_13_14_15_calendar"
+  # Удалена секция настроек GCI
 issues:
   exclude-rules:
     - path: _test\.go
@@ -44,7 +47,6 @@ linters:
     - exhaustive
     - copyloopvar
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
