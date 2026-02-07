@@ -1,9 +1,10 @@
 package memorystorage
 
 import (
-	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
 	"sync"
 	"time"
+
+	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
 )
 
 type Storage struct {

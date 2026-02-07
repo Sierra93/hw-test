@@ -1,8 +1,6 @@
 package main
 
 import (
-	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
-	"Sierra93/hw-test/hw12_13_14_15_calendar/internal/logger"
 	"context"
 	"flag"
 	"fmt"
@@ -11,10 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	internalhttp "Sierra93/hw-test/hw12_13_14_15_calendar/internal/server/http"
-	storage "Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/sql"
+	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
+	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string

@@ -1,4 +1,4 @@
-module Sierra93/hw-test/hw12_13_14_15_calendar
+module github.com/Sierra93/hw-test/hw12_13_14_15_calendar
 
 go 1.23.0
 
