@@ -8,7 +8,7 @@ build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build
-	$(BIN) -config ./configs/config.toml
+	$(BIN) -config ./configs/config.yaml
 
 build-img:
 	docker build \
@@ -23,12 +23,24 @@ version: build
 	$(BIN) version
 
 test:
-	go test -race ./internal/... ./pkg/...
+	go test -race ./internal/logger ./internal/storage/memory ./internal/server/http
 
 install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.57.2
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /home/runner/go/bin v1.64.5
 
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint
+down:
+	docker-compose -f ./deployments/docker-compose.yaml down
+
+comp: down
+	docker-compose -f ./deployments/docker-compose.yml up -d --build
+
+install-oapigen-deps:
+	(which oapi-codegen > /dev/null) || go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+target: install-oapigen-deps
+	go generate ./internal/server/http
+
+.PHONY: build run build-img run-img version test lint comp down
