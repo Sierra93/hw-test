@@ -1,8 +1,11 @@
 package internalhttp
 
 import (
+	"context"
 	"net/http"
 	"time"
+
+	"github.com/oapi-codegen/runtime/strictmiddleware/nethttp" //nolint:depguard
 )
 
 type Middleware struct {
@@ -23,11 +26,11 @@ func NewMiddleware(log Logger) *Middleware {
 	return &Middleware{logger: log}
 }
 
-func (mw *Middleware) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (mw *Middleware) loggingMiddleware(next nethttp.StrictHTTPHandlerFunc, _ string) nethttp.StrictHTTPHandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (response interface{}, err error) { //nolint:lll
 		start := time.Now()
 		ww := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-		next(ww, r)
+		response, err = next(ctx, ww, r, request)
 		duration := time.Since(start)
 		clientIP := r.RemoteAddr
 		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
@@ -43,5 +46,6 @@ func (mw *Middleware) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc 
 			duration,
 			r.UserAgent(),
 		)
-	})
+		return response, err
+	}
 }

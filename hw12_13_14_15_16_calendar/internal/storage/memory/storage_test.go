@@ -13,7 +13,7 @@ import (
 func TestStorage(t *testing.T) {
 	store := New()
 
-	event := storage.Event{
+	event := &storage.Event{
 		ID:    "1",
 		Title: "Event 1",
 		Start: time.Now(),
@@ -21,29 +21,29 @@ func TestStorage(t *testing.T) {
 	}
 
 	t.Run("basic crud", func(t *testing.T) {
-		err := store.Add(event)
+		_, err := store.Add(event)
 		require.NoError(t, err)
 
 		got, err := store.Get(event.ID)
 		require.NoError(t, err)
-		require.Equal(t, &event, got, "expected %v, got %v", event, got)
+		require.Equal(t, event, got, "expected %v, got %v", event, got)
 
 		events, err := store.GetForPeriod(time.Now(), time.Now().Add(time.Hour))
 		require.NoError(t, err)
-		require.Equal(t, []storage.Event{event}, events, "expected %v, got %v", []storage.Event{event}, events)
+		require.Equal(t, []*storage.Event{event}, events, "expected %v, got %v", []*storage.Event{event}, events)
 
-		err = store.Update(event)
+		_, err = store.Update("1", event)
 		require.NoError(t, err)
 
 		got, err = store.Get("2")
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, got)
 
 		err = store.Delete(event.ID)
 		require.NoError(t, err)
 
 		got, err = store.Get(event.ID)
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, got)
 	})
 }
@@ -61,13 +61,13 @@ func TestStorageMultithread(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for i := g * cnt; i < g*cnt+cnt; i++ {
-					event := storage.Event{
+					event := &storage.Event{
 						ID:    strconv.Itoa(i),
 						Title: "Event " + strconv.Itoa(i),
 						Start: time.Now(),
 						End:   time.Now().Add(time.Hour),
 					}
-					err := store.Add(event)
+					_, err := store.Add(event)
 					require.NoError(t, err)
 				}
 			}()
@@ -80,13 +80,13 @@ func TestStorageMultithread(t *testing.T) {
 		store := New()
 		cnt := eventCount / workerCount
 		for i := 0; i < eventCount; i++ {
-			event := storage.Event{
+			event := &storage.Event{
 				ID:    strconv.Itoa(i),
 				Title: "Event " + strconv.Itoa(i),
 				Start: time.Now(),
 				End:   time.Now().Add(time.Hour),
 			}
-			err := store.Add(event)
+			_, err := store.Add(event)
 			require.NoError(t, err)
 		}
 		wg.Add(workerCount)

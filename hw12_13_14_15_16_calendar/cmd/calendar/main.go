@@ -12,7 +12,6 @@ import (
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/server/http"
-	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/sql"
 )
@@ -72,7 +71,7 @@ func main() {
 	}
 }
 
-func newEventStorage(config *Config) (storage.EventStorage, error) {
+func newEventStorage(config *Config) (app.Storage, error) {
 	switch config.DataSource.StorageType {
 	case "memory":
 		return memorystorage.New(), nil
