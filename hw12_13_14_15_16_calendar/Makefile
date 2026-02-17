@@ -1,62 +1,75 @@
-# Переменные путей
-PROJECT_DIR := ./hw12_13_14_15_16_calendar
-BIN_DIR := ./bin
+BIN := "./bin/calendar"
+DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
-# Исправлены кавычки для корректной передачи строк в Go
-LDFLAGS := -X 'main.release=develop' -X 'main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S)' -X 'main.gitHash=$(GIT_HASH)'
-
-# Сборка всех компонентов
-build: build-calendar build-scheduler build-storer
+LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
 build-calendar:
-	go build -v -o $(BIN_DIR)/calendar -ldflags "$(LDFLAGS)" $(PROJECT_DIR)/cmd/calendar
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
-build-scheduler:
-	go build -v -o $(BIN_DIR)/scheduler -ldflags "$(LDFLAGS)" $(PROJECT_DIR)/cmd/scheduler
-
-build-storer:
-	go build -v -o $(BIN_DIR)/storer -ldflags "$(LDFLAGS)" $(PROJECT_DIR)/cmd/storer
-
-# Тесты (исправлены пути к пакетам)
-test:
-	go test -race $(PROJECT_DIR)/internal/logger $(PROJECT_DIR)/internal/storage/memory $(PROJECT_DIR)/internal/server/http
-
-# Линтер (запуск из корня с учетом всех подпапок)
-lint: install-lint-deps
-	golangci-lint run $(PROJECT_DIR)/...
-
-# Запуск локально
 run-calendar: build-calendar
-	$(BIN_DIR)/calendar -config $(PROJECT_DIR)/configs/config.yaml
+	$(BIN) -config ./configs/calendar-config.yaml
 
-run-scheduler: build-scheduler
-	$(BIN_DIR)/scheduler -config $(PROJECT_DIR)/configs/scheduler-config.yaml
-
-run-storer: build-storer
-	$(BIN_DIR)/storer -config $(PROJECT_DIR)/configs/storer-config.yaml
-
-# Docker сборка (исправлены пути к Dockerfile и контексту)
 build-calendar-img:
-	docker build --build-arg=LDFLAGS="$(LDFLAGS)" -t calendar:develop -f $(PROJECT_DIR)/build/calendar/Dockerfile .
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t $(DOCKER_IMG) \
+		-f build/calendar/Dockerfile .
 
-build-scheduler-img:
-	docker build --build-arg=LDFLAGS="$(LDFLAGS)" -t scheduler:develop -f $(PROJECT_DIR)/build/scheduler/Dockerfile .
+run-calendar-img: build-calendar-img
+	docker run $(DOCKER_IMG)
 
-build-storer-img:
-	docker build --build-arg=LDFLAGS="$(LDFLAGS)" -t storer:develop -f $(PROJECT_DIR)/build/storer/Dockerfile .
+version: build-calendar
+	$(BIN) version
 
-# Утилиты
+test:
+	go test -race ./internal/logger ./internal/storage/memory ./internal/server/http
+
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.64.5
 
-target:
-	go generate $(PROJECT_DIR)/internal/server/http
+lint: install-lint-deps
+	golangci-lint run ./...
 
 down:
-	docker-compose -f $(PROJECT_DIR)/deployments/docker-compose.yaml down
+	docker-compose -f ./deployments/docker-compose.yaml down
 
 up: down
-	docker-compose -f $(PROJECT_DIR)/deployments/docker-compose.yaml up -d --build
+	docker-compose -f ./deployments/docker-compose.yaml up -d --build
 
-.PHONY: build build-calendar build-scheduler build-storer test lint up down target
+install-oapigen-deps:
+	(which oapi-codegen > /dev/null) || go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+target: install-oapigen-deps
+	go generate ./internal/server/http
+
+build-scheduler:
+	go build -v -o ./bin/scheduler -ldflags "$(LDFLAGS)" ./cmd/scheduler
+
+run-scheduler: build-scheduler
+	./bin/scheduler -config ./configs/scheduler-config.yml
+
+build-scheduler-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t scheduler:develop \
+		-f build/scheduler/Dockerfile .
+
+build-storer:
+	go build -v -o ./bin/storer -ldflags "$(LDFLAGS)" ./cmd/storer
+
+run-storer: build-storer
+	./bin/storer -config ./configs/storer-config.yaml
+
+build-storer-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t storer:develop \
+		-f build/storer/Dockerfile .
+
+run-storer-img: build-storer-img
+	docker run storer:develop
+
+build: build-calendar build-scheduler build-storer
+
+.PHONY: build run build-img run-img version test lint comp down
