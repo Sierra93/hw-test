@@ -1,4 +1,4 @@
-package notification //nolint
+package notification
 
 import (
 	"context"
@@ -77,5 +77,3 @@ func (s *Scheduler) DeletePastEvents(ctx context.Context) {
 		}
 	}
 }
-
-//nolint

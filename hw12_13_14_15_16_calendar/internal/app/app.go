@@ -8,7 +8,7 @@ import (
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage/sql"
-	"github.com/google/uuid"
+	"github.com/google/uuid" //nolint:depguard
 )
 
 type Application interface {

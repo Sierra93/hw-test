@@ -1,4 +1,4 @@
-package internalmessagebroker //nolint
+package internalmessagebroker
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
-	"github.com/rabbitmq/amqp091-go"
+	"github.com/rabbitmq/amqp091-go" //nolint:depguard
 )
 
 type Producer struct {

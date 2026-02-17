@@ -1,4 +1,4 @@
-package internalmessagebroker //nolint
+package internalmessagebroker
 
 import (
 	"context" // Уже импортируется
@@ -7,7 +7,7 @@ import (
 
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/storage"
-	amqp "github.com/rabbitmq/amqp091-go"
+	amqp "github.com/rabbitmq/amqp091-go" //nolint:depguard
 )
 
 type Consumer struct {
@@ -30,7 +30,7 @@ func NewConsumer(app app.Application, logger app.Logger, brokers []string, queue
 	}
 }
 
-// connect устанавливает соединение и канал с RabbitMQ
+// connect устанавливает соединение и канал с RabbitMQ.
 func (c *Consumer) connect(ctx context.Context) error {
 	var lastErr error
 	retryDelay := time.Second
@@ -82,7 +82,7 @@ func (c *Consumer) connect(ctx context.Context) error {
 	return nil
 }
 
-// ensureQueueExists проверяет существование очереди и создает ее, если не существует
+// ensureQueueExists проверяет существование очереди и создает ее, если не существует.
 func (c *Consumer) ensureQueueExists() error {
 	if c.channel == nil {
 		return nil // Или ошибка, если канала нет
@@ -164,7 +164,7 @@ func (c *Consumer) Start(ctx context.Context) error {
 	}
 }
 
-// Close закрывает соединение и канал с RabbitMQ
+// Close закрывает соединение и канал с RabbitMQ.
 func (c *Consumer) Close() {
 	if c.channel != nil {
 		_ = c.channel.Close()

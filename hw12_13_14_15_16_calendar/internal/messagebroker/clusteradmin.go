@@ -1,10 +1,11 @@
-package internalmessagebroker //nolint
+package internalmessagebroker
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Sierra93/hw-test/hw12_13_14_15_calendar/internal/app"
-	amqp "github.com/rabbitmq/amqp091-go"
+	amqp "github.com/rabbitmq/amqp091-go" //nolint:depguard
 )
 
 type ClusterAdmin struct {
@@ -58,7 +59,7 @@ func (a *ClusterAdmin) connect() error {
 	return lastErr
 }
 
-// ensureQueueExists проверяет существование очереди и создает ее, если не существует
+// ensureQueueExists проверяет существование очереди и создает ее, если не существует.
 func (a *ClusterAdmin) ensureQueueExists(queue string) error {
 	if a.channel == nil {
 		return fmt.Errorf("channel is nil, cannot declare queue '%s'", queue)
@@ -80,7 +81,7 @@ func (a *ClusterAdmin) ensureQueueExists(queue string) error {
 }
 
 // CreateQueue объявляет очередь с указанным именем.
-// Заменено на ensureQueueExists для единообразия
+// Заменено на ensureQueueExists для единообразия.
 func (a *ClusterAdmin) CreateQueue(queue string) error {
 	return a.ensureQueueExists(queue)
 }
@@ -99,7 +100,10 @@ func (a *ClusterAdmin) QueueExists(queue string) (bool, error) {
 		nil,
 	)
 	if err != nil {
-		if amqpErr, ok := err.(*amqp.Error); ok && amqpErr.Code == amqp.NotFound {
+		var amqpErr *amqp.Error
+		// errors.As ищет внутри err ошибку типа *amqp.Error
+		// Если находит — записывает её в переменную amqpErr и возвращает true
+		if errors.As(err, &amqpErr) && amqpErr.Code == amqp.NotFound {
 			return false, nil
 		}
 		a.logger.Error("failed to check queue '%s' existence: %s", queue, err.Error())

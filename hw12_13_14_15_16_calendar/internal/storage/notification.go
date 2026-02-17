@@ -1,4 +1,4 @@
-package storage //nolint
+package storage
 
 import (
 	"time"
@@ -12,5 +12,3 @@ type Notification struct {
 	EventEnd   time.Time `db:"event_end" json:"eventEnd"`
 	OwnerID    string    `db:"owner_id" json:"ownerId"`
 }
-
-//nolint
