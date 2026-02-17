@@ -1,0 +1,16 @@
+rabbitmq:
+  uri: "amqp://user:password@rabbitmq:5672/"
+  queue: "event-notifications"
+  exchange: "calendar"
+  routing_key: "event.notifications"
+
+datasource:
+  # storagetype: "memory"
+  storagetype: "sql"
+  dsn: "postgres://user:password@pdb:5432/calendar_db?sslmode=disable"
+
+logger:
+  level: "DEBUG" # "ERROR", "WARN", "INFO", "DEBUG"
+
+scheduler:
+  interval: "10s"
