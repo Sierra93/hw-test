@@ -4,31 +4,72 @@ DOCKER_IMG="calendar:develop"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
-build:
+build-calendar:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
-run: build
-	$(BIN) -config ./configs/config.toml
+run-calendar: build-calendar
+	$(BIN) -config ./configs/calendar-config.yaml
 
-build-img:
+build-calendar-img:
 	docker build \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
 		-t $(DOCKER_IMG) \
-		-f build/Dockerfile .
+		-f build/calendar/Dockerfile .
 
-run-img: build-img
+run-calendar-img: build-calendar-img
 	docker run $(DOCKER_IMG)
 
-version: build
+version: build-calendar
 	$(BIN) version
 
 test:
-	go test -race ./internal/... ./pkg/...
+	go test -race ./internal/logger ./internal/storage/memory ./internal/server/http
 
 install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.57.2
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.64.5
 
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint
+down:
+	docker-compose -f ./deployments/docker-compose.yaml down
+
+up: down
+	docker-compose -f ./deployments/docker-compose.yaml up -d --build
+
+install-oapigen-deps:
+	(which oapi-codegen > /dev/null) || go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+target: install-oapigen-deps
+	go generate ./internal/server/http
+
+build-scheduler:
+	go build -v -o ./bin/scheduler -ldflags "$(LDFLAGS)" ./cmd/scheduler
+
+run-scheduler: build-scheduler
+	./bin/scheduler -config ./configs/scheduler-config.yaml
+
+build-scheduler-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t scheduler:develop \
+		-f build/scheduler/Dockerfile .
+
+build-storer:
+	go build -v -o ./bin/storer -ldflags "$(LDFLAGS)" ./cmd/storer
+
+run-storer: build-storer
+	./bin/storer -config ./configs/storer-config.yaml
+
+build-storer-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t storer:develop \
+		-f build/storer/Dockerfile .
+
+run-storer-img: build-storer-img
+	docker run storer:develop
+
+build: build-calendar build-scheduler build-storer
+
+.PHONY: build run build-img run-img version test lint comp down
