@@ -47,7 +47,7 @@ build-scheduler:
 	go build -v -o ./bin/scheduler -ldflags "$(LDFLAGS)" ./cmd/scheduler
 
 run-scheduler: build-scheduler
-	./bin/scheduler -config ./configs/scheduler-config.yml
+	./bin/scheduler -config ./configs/scheduler-config.yaml
 
 build-scheduler-img:
 	docker build \
